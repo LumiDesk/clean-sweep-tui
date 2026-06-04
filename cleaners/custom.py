@@ -15,6 +15,33 @@ CONFIG_PATH = os.path.join(
 )
 
 
+def _load_paths() -> list[str] | None:
+    """读取并展开 custom.json 里的 paths；读不到或格式不对返回 None。"""
+    if not os.path.isfile(CONFIG_PATH):
+        return None
+    try:
+        with open(CONFIG_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+    raw_paths = data.get("paths") if isinstance(data, dict) else None
+    if not isinstance(raw_paths, list):
+        return None
+    return [os.path.expanduser(p) for p in raw_paths if isinstance(p, str) and p]
+
+
+def custom_existing() -> list[str]:
+    """custom.json 中当前真实存在的路径列表（GUI 据此判断是否可勾选）。"""
+    expanded = _load_paths()
+    if not expanded:
+        return []
+    return [p for p in expanded if os.path.exists(p)]
+
+
+def _custom_cmds() -> list[str]:
+    return [f"rm -rf {shlex.quote(p)}" for p in custom_existing()]
+
+
 def clean_custom() -> None:
     if not os.path.isfile(CONFIG_PATH):
         console.print(f"[yellow]未找到自定义配置 {CONFIG_PATH}，跳过[/yellow]")
@@ -23,19 +50,14 @@ def clean_custom() -> None:
         )
         return
 
-    try:
-        with open(CONFIG_PATH, encoding="utf-8") as f:
-            data = json.load(f)
-    except (OSError, json.JSONDecodeError) as e:
-        console.print(f"[red]读取 {CONFIG_PATH} 失败：{e}[/red]")
+    expanded = _load_paths()
+    if expanded is None:
+        console.print(f"[red]读取 {CONFIG_PATH} 失败或格式不正确[/red]")
         return
-
-    raw_paths = data.get("paths") if isinstance(data, dict) else None
-    if not isinstance(raw_paths, list) or not raw_paths:
+    if not expanded:
         console.print(f"[yellow]{CONFIG_PATH} 中未配置 paths，跳过[/yellow]")
         return
 
-    expanded = [os.path.expanduser(p) for p in raw_paths if isinstance(p, str) and p]
     existing = [p for p in expanded if os.path.exists(p)]
     missing = [p for p in expanded if not os.path.exists(p)]
 
@@ -55,5 +77,5 @@ def clean_custom() -> None:
         console.print("[yellow]已跳过自定义清理[/yellow]")
         return
 
-    for p in existing:
-        run(f"rm -rf {shlex.quote(p)}")
+    for cmd in _custom_cmds():
+        run(cmd)

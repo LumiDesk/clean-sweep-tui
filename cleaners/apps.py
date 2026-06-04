@@ -7,14 +7,23 @@ from rich.prompt import Confirm
 
 from ._common import console, run
 
+HOME = os.path.expanduser("~")
+CLAUDE_TARGETS = [
+    os.path.join(HOME, ".claude"),
+    os.path.join(HOME, ".claude.json"),
+]
+
+
+def claude_existing() -> list[str]:
+    return [p for p in CLAUDE_TARGETS if os.path.exists(p)]
+
+
+def _claude_cmds() -> list[str]:
+    return [f"rm -rf {shlex.quote(path)}" for path in claude_existing()]
+
 
 def clean_claude() -> None:
-    home = os.path.expanduser("~")
-    targets = [
-        os.path.join(home, ".claude"),
-        os.path.join(home, ".claude.json"),
-    ]
-    existing = [p for p in targets if os.path.exists(p)]
+    existing = claude_existing()
     if not existing:
         console.print("[yellow]未找到 Claude 相关文件，跳过[/yellow]")
         return
@@ -25,5 +34,5 @@ def clean_claude() -> None:
     ):
         console.print("[yellow]已跳过 Claude 清理[/yellow]")
         return
-    for path in existing:
-        run(f"rm -rf {shlex.quote(path)}")
+    for cmd in _claude_cmds():
+        run(cmd)

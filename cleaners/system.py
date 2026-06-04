@@ -1,4 +1,8 @@
-"""系统级清理：dnf / apt 包缓存 / autoremove、systemd 日志、~/.cache、/var/cache"""
+"""系统级清理：dnf / apt 包缓存 / autoremove、systemd 日志、~/.cache、/var/cache
+
+`_*_cmds()` 给出不带 `sudo` 的命令规格；CLI 在 `clean_*()` 里加 `sudo`，
+GUI 经执行层用 `pkexec` 提权。需要提权的项另带二次确认（CLI）/勾选即确认（GUI）。
+"""
 
 import os
 import shlex
@@ -6,6 +10,45 @@ import shlex
 from rich.prompt import Confirm
 
 from ._common import console, has, run, skip
+
+CACHE_DIR = os.path.expanduser("~/.cache")
+
+# /var/cache 下每个子目录归属不同应用，全删风险高。
+# 只挑公认能自动重建、清完不影响系统启动的几项；dnf 缓存归 clean_dnf 处理。
+VAR_CACHE_TARGETS = [
+    "/var/cache/man",
+    "/var/cache/fontconfig",
+    "/var/cache/PackageKit",
+    "/var/cache/cups",
+]
+
+
+def _dnf_cmds() -> list[str]:
+    return ["dnf autoremove -y", "dnf clean all"]
+
+
+def _apt_cmds() -> list[str]:
+    return ["apt-get autoremove -y", "apt-get clean"]
+
+
+def _journal_cmds() -> list[str]:
+    # 先 rotate 关闭当前活动日志文件，再用极小阈值清空全部归档
+    return ["journalctl --rotate", "journalctl --vacuum-time=1s"]
+
+
+def _user_cache_cmds() -> list[str]:
+    return [f"find {shlex.quote(CACHE_DIR)} -mindepth 1 -delete"]
+
+
+def var_cache_existing() -> list[str]:
+    return [p for p in VAR_CACHE_TARGETS if os.path.isdir(p)]
+
+
+def _var_cache_cmds() -> list[str]:
+    return [
+        f"find {shlex.quote(path)} -mindepth 1 -delete"
+        for path in var_cache_existing()
+    ]
 
 
 def clean_dnf() -> None:
@@ -19,8 +62,8 @@ def clean_dnf() -> None:
     ):
         console.print("[yellow]已跳过 dnf 清理[/yellow]")
         return
-    run("sudo dnf autoremove -y")
-    run("sudo dnf clean all")
+    for cmd in _dnf_cmds():
+        run(f"sudo {cmd}")
 
 
 def clean_apt() -> None:
@@ -34,8 +77,8 @@ def clean_apt() -> None:
     ):
         console.print("[yellow]已跳过 apt 清理[/yellow]")
         return
-    run("sudo apt-get autoremove -y")
-    run("sudo apt-get clean")
+    for cmd in _apt_cmds():
+        run(f"sudo {cmd}")
 
 
 def clean_journal() -> None:
@@ -49,32 +92,22 @@ def clean_journal() -> None:
     ):
         console.print("[yellow]已跳过 journal 清理[/yellow]")
         return
-    # 先 rotate 关闭当前活动日志文件，再用极小阈值清空全部归档
-    run("sudo journalctl --rotate")
-    run("sudo journalctl --vacuum-time=1s")
+    for cmd in _journal_cmds():
+        run(f"sudo {cmd}")
 
 
 def clean_user_cache() -> None:
-    cache_dir = os.path.expanduser("~/.cache")
-    if not os.path.isdir(cache_dir):
+    if not os.path.isdir(CACHE_DIR):
         skip("~/.cache")
         return
     # XDG 用户缓存（浏览器 / IDE / 缩略图等），删完应用会按需重建。
     # 性质上是缓存，跟 dev.py 同等级，不加二次确认。
-    run(f"find {shlex.quote(cache_dir)} -mindepth 1 -delete")
+    for cmd in _user_cache_cmds():
+        run(cmd)
 
 
 def clean_var_cache() -> None:
-    # /var/cache 下每个子目录归属不同应用，全删风险高。
-    # 只挑公认能自动重建、清完不影响系统启动的几项；
-    # dnf 缓存归 clean_dnf 处理，这里不重复。
-    targets = [
-        "/var/cache/man",
-        "/var/cache/fontconfig",
-        "/var/cache/PackageKit",
-        "/var/cache/cups",
-    ]
-    existing = [p for p in targets if os.path.isdir(p)]
+    existing = var_cache_existing()
     if not existing:
         console.print("[yellow]未发现 /var/cache 下可清理项，跳过[/yellow]")
         return
@@ -85,5 +118,5 @@ def clean_var_cache() -> None:
     ):
         console.print("[yellow]已跳过 /var/cache 清理[/yellow]")
         return
-    for path in existing:
-        run(f"sudo find {shlex.quote(path)} -mindepth 1 -delete")
+    for cmd in _var_cache_cmds():
+        run(f"sudo {cmd}")
