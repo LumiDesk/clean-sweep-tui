@@ -14,6 +14,14 @@ CONFIG_PATH = os.path.join(
     "custom.json",
 )
 
+HOME = os.path.expanduser("~")
+
+
+def _is_dangerous(path: str) -> bool:
+    """挡掉会造成灾难性删除的路径：根目录、家目录本身。"""
+    norm = os.path.normpath(os.path.abspath(path))
+    return norm == os.sep or norm == os.path.normpath(HOME)
+
 
 def _load_paths() -> list[str] | None:
     """读取并展开 custom.json 里的 paths；读不到或格式不对返回 None。"""
@@ -31,11 +39,11 @@ def _load_paths() -> list[str] | None:
 
 
 def custom_existing() -> list[str]:
-    """custom.json 中当前真实存在的路径列表（GUI 据此判断是否可勾选）。"""
+    """custom.json 中当前真实存在、且非危险的路径列表（GUI 据此判断是否可勾选）。"""
     expanded = _load_paths()
     if not expanded:
         return []
-    return [p for p in expanded if os.path.exists(p)]
+    return [p for p in expanded if os.path.exists(p) and not _is_dangerous(p)]
 
 
 def _custom_cmds() -> list[str]:
@@ -58,14 +66,17 @@ def clean_custom() -> None:
         console.print(f"[yellow]{CONFIG_PATH} 中未配置 paths，跳过[/yellow]")
         return
 
-    existing = [p for p in expanded if os.path.exists(p)]
-    missing = [p for p in expanded if not os.path.exists(p)]
+    dangerous = [p for p in expanded if _is_dangerous(p)]
+    missing = [p for p in expanded if not _is_dangerous(p) and not os.path.exists(p)]
+    existing = [p for p in expanded if not _is_dangerous(p) and os.path.exists(p)]
 
+    for p in dangerous:
+        console.print(f"[red]拒绝删除危险路径 {p}（根目录或家目录本身），跳过[/red]")
     for p in missing:
         console.print(f"[yellow]未找到 {p}，跳过[/yellow]")
 
     if not existing:
-        console.print("[yellow]自定义列表中没有任何存在的路径，跳过[/yellow]")
+        console.print("[yellow]自定义列表中没有任何可删除的路径，跳过[/yellow]")
         return
 
     console.print("将删除以下自定义路径（包括其本身）：")

@@ -1,7 +1,7 @@
 [project]
 name = "cleansh"
 version = "0.1.0"
-description = "Add your description here"
+description = "一键清空各类开发缓存及部分用户目录、应用配置的 Linux 小工具（CLI + GUI）"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [

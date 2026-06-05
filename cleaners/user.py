@@ -45,12 +45,8 @@ def clean_user_dirs() -> None:
     ):
         console.print("[yellow]已跳过用户目录清理[/yellow]")
         return
-    for name in targets:
-        path = os.path.join(HOME, name)
-        if not os.path.isdir(path):
-            console.print(f"[yellow]未找到 {path}，跳过[/yellow]")
-            continue
-        run(f"find {shlex.quote(path)} -mindepth 1 -delete")
+    for cmd in _user_dirs_cmds():
+        run(cmd)
 
 
 def clean_trash() -> None:

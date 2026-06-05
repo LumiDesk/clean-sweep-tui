@@ -6,6 +6,7 @@
 """
 
 import shlex
+import shutil
 import subprocess
 from collections.abc import Callable
 
@@ -13,8 +14,6 @@ from .registry import Task
 
 
 def has_pkexec() -> bool:
-    import shutil
-
     return shutil.which("pkexec") is not None
 
 
@@ -50,5 +49,5 @@ def run_task(task: Task, emit: Callable[[str], None]) -> None:
         for line in proc.stdout:
             emit(line.rstrip("\n"))
         proc.wait()
-        if proc.returncode not in (0, None):
+        if proc.returncode != 0:
             emit(f"（退出码 {proc.returncode}）")
