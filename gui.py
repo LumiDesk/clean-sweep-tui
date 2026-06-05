@@ -66,8 +66,8 @@ class MainWindow(QWidget):
         root.addWidget(title)
 
         hint = QLabel(
-            "勾选后点下方按钮开始。带 🔒 的项需要管理员权限，会弹系统密码框；"
-            "带 ⚠️ 的项删的是用户数据 / 配置 / 系统状态，请确认后再勾选。"
+            "勾选后点下方按钮开始。标「管理员」的项需要管理员权限，会弹系统密码框；"
+            "标「敏感」的项删的是用户数据 / 配置 / 系统状态，请确认后再勾选。"
         )
         hint.setWordWrap(True)
         hint.setStyleSheet("color: gray;")
@@ -107,27 +107,50 @@ class MainWindow(QWidget):
         self._log.setStyleSheet("font-family: monospace;")
         root.addWidget(self._log, stretch=2)
 
+    @staticmethod
+    def _make_badge(text: str, color: str) -> QLabel:
+        """一个带背景色的小标签，用来替代不一定有字体的 emoji。"""
+        badge = QLabel(text)
+        badge.setStyleSheet(
+            f"background: {color}; color: white; border-radius: 4px;"
+            "padding: 1px 6px; font-size: 11px; font-weight: bold;"
+        )
+        return badge
+
     def _populate_tasks(self) -> None:
         last_category: str | None = None
         for task in TASKS:
             if task.category != last_category:
                 last_category = task.category
                 header = QLabel(CATEGORY_TITLES.get(task.category, task.category))
-                header.setStyleSheet("font-weight: bold; margin-top: 6px;")
+                header.setStyleSheet("font-weight: bold; font-size: 13px; margin-top: 10px;")
                 self._list_layout.addWidget(header)
                 line = QFrame()
                 line.setFrameShape(QFrame.Shape.HLine)
                 self._list_layout.addWidget(line)
 
             available = task.detect()
-            marks = ""
-            if task.privileged:
-                marks += " 🔒"
-            if task.sensitive:
-                marks += " ⚠️"
-            label = f"{task.label}{marks} — {task.detail}"
 
-            cb = QCheckBox(label)
+            row = QWidget()
+            h = QHBoxLayout(row)
+            h.setContentsMargins(4, 1, 4, 1)
+            h.setSpacing(6)
+
+            cb = QCheckBox(task.label)
+            h.addWidget(cb)
+            if task.privileged:
+                h.addWidget(self._make_badge("管理员", "#d98c00"))
+            if task.sensitive:
+                h.addWidget(self._make_badge("敏感", "#c0392b"))
+
+            detail_text = f"— {task.detail}"
+            if not available:
+                detail_text += "（未检测到，跳过）"
+            detail = QLabel(detail_text)
+            detail.setStyleSheet("color: gray;")
+            h.addWidget(detail)
+            h.addStretch()
+
             tip = task.detail
             if available:
                 extra = task.note()
@@ -135,10 +158,11 @@ class MainWindow(QWidget):
                     tip = f"{task.detail}\n目标：{extra}"
             else:
                 cb.setEnabled(False)
-                cb.setText(f"{label}（未检测到，跳过）")
             cb.setToolTip(tip)
+            row.setToolTip(tip)
+
             self._checks[task.key] = cb
-            self._list_layout.addWidget(cb)
+            self._list_layout.addWidget(row)
 
     # ---- 交互 ----
     def _set_all(self, checked: bool) -> None:
@@ -174,7 +198,7 @@ class MainWindow(QWidget):
         if sensitive:
             warn = (
                 "\n\n其中以下项删除的是用户数据 / 配置 / 系统状态，无法撤销：\n"
-                + "\n".join(f"  ⚠️ {t.label}" for t in sensitive)
+                + "\n".join(f"  [敏感] {t.label}" for t in sensitive)
             )
         reply = QMessageBox.question(
             self,
