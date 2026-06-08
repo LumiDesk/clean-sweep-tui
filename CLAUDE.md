@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`cleansh` 是一个一键清空各类开发缓存（以及部分用户目录、应用配置）的工具，仅面向 Linux。Python 3.14，uv 管理依赖。第三方库：CLI 用 `rich`，GUI 用 `pyside6`（Qt）。
+`CleanSweep` 是一个一键清空各类开发缓存（以及部分用户目录、应用配置）的工具，仅面向 Linux。Python 3.14，uv 管理依赖。第三方库：CLI 用 `rich`，GUI 用 `pyside6`（Qt）。
 
 提供两个平级入口（都在模块顶层直接执行，不要加 `if __name__ == "__main__"`）：
 - `main.py`：命令行界面，终端里逐步二次确认。
