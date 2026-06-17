@@ -15,6 +15,7 @@ from cleaners.dev import (
     clean_rust,
     clean_sdkman,
 )
+from cleaners.logs import clean_logs
 from cleaners.system import (
     clean_apt,
     clean_dnf,
@@ -55,6 +56,7 @@ STEPS = [
     ("~/.cache", clean_user_cache),
     ("用户目录", clean_user_dirs),
     ("回收站", clean_trash),
+    ("日志文件", clean_logs),
     ("Claude", clean_claude),
     ("dnf", clean_dnf),
     ("apt", clean_apt),
