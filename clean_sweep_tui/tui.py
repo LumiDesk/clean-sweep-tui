@@ -1,4 +1,4 @@
-"""CleanSweep 的 TUI 前端（textual）。
+"""CleanSweep TUI 的前端（textual）。
 
 交互：↑↓/jk 移动，空格勾选（TODO 式 [ ] / [x]），a 全选 / n 全不选 / c 仅缓存，
 回车执行。右侧实时预览高亮项将要执行的命令。回车后弹出一次性确认，确认即返回
@@ -235,7 +235,7 @@ class MainScreen(Screen):
 
 
 class CleanSweepApp(App[list[str]]):
-    TITLE = "CleanSweep"
+    TITLE = "CleanSweep TUI"
     SUB_TITLE = "↑↓ 移动 · 空格选择 · 回车执行 · q 退出"
 
     CSS = """

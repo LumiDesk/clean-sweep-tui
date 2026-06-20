@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`CleanSweep` 是一个一键清空各类开发缓存（以及部分用户目录、应用配置）的命令行工具，仅面向 Linux。Python ≥3.10（开发用 3.14），uv 管理依赖。第三方库：`rich`（执行阶段的终端输出）+ `textual`（勾选清理项的 TUI）。
+`CleanSweep TUI` 是一个一键清空各类开发缓存（以及部分用户目录、应用配置）的命令行工具，仅面向 Linux。Python ≥3.10（开发用 3.14），uv 管理依赖。第三方库：`rich`（执行阶段的终端输出）+ `textual`（勾选清理项的 TUI）。
 
 代码在 `clean_sweep_tui/` 包内。入口是 `clean_sweep_tui/cli.py` 的 `main()`：拉起 TUI 让用户一次性勾选要清理的项，TUI 退出后回到普通终端按顺序执行被选中项。`main()` 也是 pyproject `[project.scripts]` 注册的 `clean-sweep-tui` 命令入口；仓库根目录的 `main.py` 只是 `from clean_sweep_tui.cli import main; main()` 的薄壳，让 `uv run main.py` 仍等价于装好后的 `clean-sweep-tui`。PyPI 分发名也是 `clean-sweep-tui`。
 

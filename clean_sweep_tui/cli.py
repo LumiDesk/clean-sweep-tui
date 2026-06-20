@@ -1,4 +1,4 @@
-"""CleanSweep 入口：拉起 TUI 拿到选中项，退出后逐条执行。
+"""CleanSweep TUI 入口：拉起 TUI 拿到选中项，退出后逐条执行。
 
 `main()` 是控制台脚本入口（pyproject 的 [project.scripts]）。仓库根目录的
 `main.py` 只是调用它的薄壳，`uv run main.py` 与安装后的 `clean-sweep-tui` 等价。
