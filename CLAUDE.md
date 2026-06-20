@@ -13,7 +13,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 运行：`uv run main.py`（或装好后 `clean-sweep-tui`）
 - 同步依赖：`uv sync`
 - 新增依赖：`uv add <pkg>`
-- 构建发布产物：`uv build`（生成 `dist/*.whl` 与 `*.tar.gz`）；上传 `uv publish`
+- 发版（一条命令）：`scripts/publish.sh [patch|minor|major|X.Y.Z]`（默认 patch）——自动升版本号（同步 `pyproject.toml` 与 `clean_sweep_tui/__init__.py`）、构建、上传 PyPI、打 tag 并 push。token 从仓库根目录 `.env` 的 `UV_PUBLISH_TOKEN` 读（见 `.env.example`，`.env` 已 gitignore）。
+- 手动构建：`uv build`（生成 `dist/*.whl` 与 `*.tar.gz`）；手动上传 `uv publish`
 
 没有测试套件，没有 linter 配置。VSCode 会跑 Ruff 类型的诊断（PostToolUse 会回传 `ide_diagnostics`），别忽略警告。
 
